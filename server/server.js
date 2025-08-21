@@ -11,7 +11,19 @@ import tripRoutes from "./routes/tripRoutes.js";
 dotenv.config();
 const app = express();
 
-app.use(cors());
+// ✅ CORS Setup
+const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  "https://pack-wise-tau.vercel.app" // deployed frontend
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true, // if you’re using cookies/auth headers
+  })
+);
+
 app.use(express.json());
 
 // API routes
@@ -40,6 +52,8 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB Connected");
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    app.listen(PORT, () =>
+      console.log(`🚀 Server running on port ${PORT}`)
+    );
   })
   .catch((err) => console.error(err));
