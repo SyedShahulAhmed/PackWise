@@ -20,9 +20,11 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: allowedOrigins,
-    credentials: true, // if you’re using cookies/auth headers
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
+
 
 app.use(express.json());
 
@@ -30,21 +32,6 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/trips", tripRoutes);
 
-// ----------------------
-// SERVE FRONTEND IN PROD
-// ----------------------
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/dist")));
-
-  // for React Router (catch-all routes)
-  app.get("*", (req, res) => {
-    res.sendFile(path.resolve(__dirname, "../client/dist", "index.html"));
-  });
-}
-// ----------------------
 
 const PORT = process.env.PORT || 5000;
 
