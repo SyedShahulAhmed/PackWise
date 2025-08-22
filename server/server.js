@@ -13,29 +13,37 @@ const app = express();
 
 // ✅ CORS Setup
 const allowedOrigins = [
-  "http://localhost:5173", // local dev
+  "http://localhost:5173", // local development
   "https://pack-wise-app.vercel.app" // deployed frontend
 ];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
 
+// Middleware
+app.use(express.json());
+
+// Root Route
 app.get("/", (req, res) => {
   res.json("Welcome to the PackWise API!");
 });
 
-app.use(express.json());
-
-// API routes
+// API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/trips", tripRoutes);
 
-
+// DB Connection and Server Start
 const PORT = process.env.PORT || 5000;
 
 mongoose
@@ -48,4 +56,4 @@ mongoose
   })
   .catch((err) => console.error(err));
 
-  export default app;
+export default app;
