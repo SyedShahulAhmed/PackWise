@@ -21,7 +21,7 @@ function Register() {
 
     try {
       const res = await axios.post(
-        "https://pack-wise-coral.vercel.app/register",
+        "https://pack-wise-coral.vercel.app/api/auth/register",
         formData
       );
 

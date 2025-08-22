@@ -16,7 +16,7 @@ function Login() {
 
     try {
       const res = await axios.post(
-        "https://pack-wise-coral.vercel.app/login",
+        "https://pack-wise-coral.vercel.app/api/auth/login",
         formData
       );
 
