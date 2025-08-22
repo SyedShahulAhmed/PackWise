@@ -27,7 +27,7 @@ function Trips() {
 
   const fetchTrips = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/trips", {
+      const res = await axios.get("https://pack-wise-coral.vercel.app/trips", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTrips(res.data);

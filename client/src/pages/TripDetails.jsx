@@ -12,7 +12,7 @@ function TripDetails() {
 
   const fetchTrip = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/trips/${tripId}`, {
+      const res = await axios.get(`https://pack-wise-coral.vercel.app/trips/${tripId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setItems(res.data.items || []);
