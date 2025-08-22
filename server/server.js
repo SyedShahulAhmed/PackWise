@@ -14,7 +14,7 @@ const app = express();
 // ✅ CORS Setup
 const allowedOrigins = [
   "http://localhost:5173", // local dev
-  "https://pack-wise-tau.vercel.app" // deployed frontend
+  "https://pack-wise-app.vercel.app/" // deployed frontend
 ];
 
 app.use(
