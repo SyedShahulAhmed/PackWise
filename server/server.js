@@ -47,3 +47,5 @@ mongoose
     );
   })
   .catch((err) => console.error(err));
+
+  export default app;
