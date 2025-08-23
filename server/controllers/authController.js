@@ -14,33 +14,42 @@ export const register = async (req, res) => {
     if (!name || !email || !username || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
 
-    // Check if user exists
-    const existingUser = await User.findOne({ email });
+    // Check if user exists by email or username
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "Email or username already exists" });
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    const newUser = new User({ name, email, username, password: hashedPassword });
+    const newUser = new User({
+      name,
+      email,
+      username,
+      password: hashedPassword,
+    });
     await newUser.save();
 
     // Generate token
     const token = generateToken(newUser._id);
 
-    // Hide password before sending
-    const userToReturn = { ...newUser._doc };
+    // Hide password
+    const userToReturn = newUser.toObject();
     delete userToReturn.password;
 
     res.status(201).json({ token, user: userToReturn });
   } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ message: "Server error during registration" });
+    console.error("Register error:", err.message, err);
+    res.status(500).json({ message: err.message });
   }
 };
+
 // @desc    Login user
 export const login = async (req, res) => {
   try {
