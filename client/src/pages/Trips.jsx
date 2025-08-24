@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { api } from "../lib/api";
 
 function Trips() {
   const [trips, setTrips] = useState([]);
@@ -15,67 +15,55 @@ function Trips() {
   const [editingTripId, setEditingTripId] = useState(null);
 
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    fetchTrips();
-  }, [token, navigate]);
 
   const fetchTrips = async () => {
     try {
-      const res = await axios.get("https://pack-wise-coral.vercel.app/trips", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/api/trips");
       setTrips(res.data);
     } catch (err) {
       console.error(err);
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
         navigate("/login");
+      } else {
+        toast.error("Failed to fetch trips");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/login");
-  };
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    fetchTrips();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
   const handleChange = (e) => {
-    setNewTrip({ ...newTrip, [e.target.name]: e.target.value });
+    setNewTrip((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleAddOrUpdateTrip = async (e) => {
     e.preventDefault();
     try {
       if (editingTripId) {
-        await axios.put(
-          `http://localhost:5000/api/trips/${editingTripId}`,
-          newTrip,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        await api.put(`/api/trips/${editingTripId}`, newTrip);
         toast.success("Trip updated successfully!");
         setEditingTripId(null);
       } else {
-        await axios.post("http://localhost:5000/api/trips", newTrip, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await api.post("/api/trips", newTrip);
         toast.success("Trip added successfully!");
       }
       setNewTrip({ title: "", destination: "", startDate: "", endDate: "" });
       fetchTrips();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to add/update trip. Please try again.");
+      const msg = err.response?.data?.message || "Failed to add/update trip";
+      toast.error(msg);
     }
   };
 
@@ -83,8 +71,8 @@ function Trips() {
     setNewTrip({
       title: trip.title,
       destination: trip.destination,
-      startDate: trip.startDate.split("T")[0],
-      endDate: trip.endDate.split("T")[0],
+      startDate: trip.startDate?.split("T")[0] || "",
+      endDate: trip.endDate?.split("T")[0] || "",
     });
     setEditingTripId(trip._id);
   };
@@ -92,27 +80,23 @@ function Trips() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this trip?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/trips/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/api/trips/${id}`);
       toast.success("Trip deleted successfully!");
       fetchTrips();
     } catch (err) {
       console.error(err);
-      toast.error("Failed to delete trip. Please try again.");
+      const msg = err.response?.data?.message || "Failed to delete trip";
+      toast.error(msg);
     }
   };
 
-  if (loading)
-    return <p className="text-center text-purple-300">Loading trips...</p>;
+  if (loading) return <p className="text-center text-purple-300">Loading trips...</p>;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white py-8">
       <div className="max-w-3xl mx-auto p-6 bg-black text-white rounded-xl shadow-lg">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-purple-400 text-center">
-            Your Trips
-          </h2>
+          <h2 className="text-2xl font-bold text-purple-400 text-center">Your Trips</h2>
         </div>
 
         {/* Create / Edit Trip Form */}

@@ -1,109 +1,115 @@
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { api } from "../lib/api";
 
 function TripDetails() {
   const { tripId } = useParams();
+  const [trip, setTrip] = useState(null);
+  const [items, setItems] = useState([]);
   const [itemName, setItemName] = useState("");
   const [itemQuantity, setItemQuantity] = useState(1);
-  const [items, setItems] = useState([]);
-  const token = localStorage.getItem("token");
 
   const fetchTrip = async () => {
     try {
-      const res = await axios.get(`https://pack-wise-coral.vercel.app/trips/${tripId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get(`/api/trips/${tripId}`);
+      setTrip(res.data);
       setItems(res.data.items || []);
     } catch (error) {
-      toast.error("Failed to fetch trip items");
       console.error("Error fetching trip:", error);
+      const msg = error.response?.data?.message || "Failed to fetch trip";
+      toast.error(msg);
     }
   };
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      // optional: redirect to login if you have access to navigate here
+      toast.error("Please log in");
+      return;
+    }
     fetchTrip();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId]);
 
   const handleAddItem = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(
-        `http://localhost:5000/api/trips/items/${tripId}`,
-        { name: itemName, quantity: itemQuantity },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/api/trips/items/${tripId}`, {
+        name: itemName.trim(),
+        quantity: Number(itemQuantity) || 1,
+      });
       setItemName("");
       setItemQuantity(1);
-      fetchTrip();
+      await fetchTrip();
       toast.success("Item added successfully!");
     } catch (error) {
-      toast.error("Failed to add item");
       console.error(error);
+      const msg = error.response?.data?.message || "Failed to add item";
+      toast.error(msg);
     }
   };
 
   const handleDeleteItem = async (itemId) => {
     try {
-      await axios.delete(
-        `http://localhost:5000/api/trips/items/${tripId}/${itemId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchTrip();
+      await api.delete(`/api/trips/items/${tripId}/${itemId}`);
+      await fetchTrip();
       toast.success("Item deleted");
     } catch (error) {
-      toast.error("Failed to delete item");
       console.error(error);
+      const msg = error.response?.data?.message || "Failed to delete item";
+      toast.error(msg);
     }
   };
 
   const handleUpdateItem = async (itemId, newName, newQty) => {
+    const name = (newName ?? "").trim();
+    const qtyNum = Number(newQty);
+    if (!name || !qtyNum) {
+      toast.error("Update cancelled: name or quantity missing");
+      return;
+    }
     try {
-      if (!newName || !newQty) {
-        toast.error("Update cancelled: name or quantity missing");
-        return;
-      }
-      await axios.put(
-        `http://localhost:5000/api/trips/items/${tripId}/update/${itemId}`,
-        { name: newName, quantity: newQty },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchTrip();
+      await api.put(`/api/trips/items/${tripId}/update/${itemId}`, {
+        name,
+        quantity: qtyNum,
+      });
+      await fetchTrip();
       toast.success("Item updated");
     } catch (error) {
-      toast.error("Failed to update item");
       console.error(error);
+      const msg = error.response?.data?.message || "Failed to update item";
+      toast.error(msg);
     }
   };
 
   const handleTogglePacked = async (itemId) => {
     try {
-      await axios.patch(
-        `http://localhost:5000/api/trips/items/${tripId}/${itemId}/toggle`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchTrip();
+      await api.patch(`/api/trips/items/${tripId}/${itemId}/toggle`, {});
+      await fetchTrip();
       toast.success("Item status updated");
     } catch (error) {
-      toast.error("Failed to update status");
       console.error(error);
+      const msg = error.response?.data?.message || "Failed to update status";
+      toast.error(msg);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-950 text-white py-10 px-4">
       <div className="max-w-3xl mx-auto bg-black rounded-xl shadow-lg p-8">
-        <h2 className="text-3xl font-bold text-purple-400 mb-8">
+        <h2 className="text-3xl font-bold text-purple-400 mb-2">
           Trip Packing List
         </h2>
+        {trip && (
+          <p className="text-gray-400 mb-8">
+            {trip.title} — {trip.destination}
+          </p>
+        )}
 
         {/* Add Item Form */}
-        <form
-          onSubmit={handleAddItem}
-          className="flex flex-col sm:flex-row gap-3 mb-8"
-        >
+        <form onSubmit={handleAddItem} className="flex flex-col sm:flex-row gap-3 mb-8">
           <input
             type="text"
             value={itemName}
@@ -115,7 +121,7 @@ function TripDetails() {
           <input
             type="number"
             value={itemQuantity}
-            onChange={(e) => setItemQuantity(e.target.value)}
+            onChange={(e) => setItemQuantity(Math.max(1, parseInt(e.target.value || "1", 10)))}
             min="1"
             className="w-24 px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
             required
@@ -133,40 +139,37 @@ function TripDetails() {
           <div className="bg-black p-6 rounded-lg">
             <h2 className="text-xl font-bold text-white mb-4">Items</h2>
 
-            {/* Table Header */}
-            <div className="grid grid-cols-3 bg-gray-800 text-white font-semibold p-3 rounded-t-lg">
+            {/* Header */}
+            <div className="grid grid-cols-4 bg-gray-800 text-white font-semibold p-3 rounded-t-lg">
               <span>Item Name</span>
               <span>Quantity</span>
+              <span>Status</span>
               <span className="text-center">Actions</span>
             </div>
 
-            {/* Items */}
+            {/* Rows */}
             {items.map((item, index) => (
               <div
                 key={item._id}
-                className={`grid grid-cols-3 items-center p-3 border-t border-gray-700 ${
+                className={`grid grid-cols-4 items-center p-3 border-t border-gray-700 ${
                   index % 2 === 0 ? "bg-gray-900" : "bg-gray-800"
                 }`}
               >
-                {/* Name */}
-                <span
-                  className={`${
-                    item.packed ? "line-through text-gray-500" : "text-white"
-                  }`}
-                >
+                <span className={item.packed ? "line-through text-gray-500" : "text-white"}>
                   {item.name}
                 </span>
-
-                {/* Quantity */}
-                <span
-                  className={`text-purple-400 ${
-                    item.packed ? "line-through text-gray-500" : ""
-                  }`}
-                >
+                <span className={item.packed ? "line-through text-gray-500" : "text-purple-400"}>
                   {item.quantity}
                 </span>
-
-                {/* Actions */}
+                <button
+                  onClick={() => handleTogglePacked(item._id)}
+                  className={`px-2 py-1 rounded ${
+                    item.packed ? "bg-green-700" : "bg-gray-700"
+                  }`}
+                  title="Toggle packed"
+                >
+                  {item.packed ? "Packed" : "Not packed"}
+                </button>
                 <div className="flex justify-center gap-2">
                   <button
                     onClick={() =>
