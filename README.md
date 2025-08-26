@@ -1,1 +1,1 @@
-PackWise -  Travel App
+PackWise: Organize. Pack. Explore.
