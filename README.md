@@ -1,4 +1,4 @@
-# ✈️ PackWise – Your Smart Travel Companion
+# ✈️ PackWise – Your Travel Companion
 
 PackWise is a **smart trip management app** built with **React.js ⚛️** and **Node.js 🌐**, designed to make packing and organizing your journeys effortless.
 No more last-minute stress — keep track of every trip and item with ease!
@@ -13,3 +13,4 @@ No more last-minute stress — keep track of every trip and item with ease!
 ## 🚀 Why PackWise?
 
 Because packing shouldn’t be a headache! PackWise keeps your travel plans organized so you can focus on the adventure ahead.
+
